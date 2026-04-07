@@ -1,0 +1,134 @@
+/* ObsidianMN-inspired heading styles */
+
+/* Force ALL text inside heading lines to white */
+.cm-line:has(.cm-md-heading1) *,
+.cm-line:has(.cm-md-heading1) {
+  color: #ffffff !important;
+}
+.cm-line:has(.cm-md-heading2) *,
+.cm-line:has(.cm-md-heading2) {
+  color: #ffffff !important;
+}
+.cm-line:has(.cm-md-heading3) *,
+.cm-line:has(.cm-md-heading3) {
+  color: #ffffff !important;
+}
+.cm-line:has(.cm-md-heading4) *,
+.cm-line:has(.cm-md-heading4) {
+  color: #e6edf3 !important;
+}
+
+/* IMPORTANT: do NOT use padding/margin/border on .cm-line — CodeMirror calculates
+   cursor positions from line-box geometry it knows about. padding/margin DON'T
+   trigger remeasurement and break click-to-position + arrow-key navigation.
+   font-size DOES trigger CM6's ResizeObserver re-measurement, so larger headings
+   via font-size are safe. */
+
+/* H1 - Deep blue gradient */
+.cm-line:has(.cm-md-heading1) {
+  background: linear-gradient(135deg, #1a365d, #2c5282) !important;
+  border-radius: 4px !important;
+  font-size: 2em !important;
+  line-height: 1.9 !important;
+  font-weight: 700 !important;
+}
+
+/* H2 - Medium blue gradient */
+.cm-line:has(.cm-md-heading2) {
+  background: linear-gradient(135deg, #2c5282, #3182ce) !important;
+  border-radius: 4px !important;
+  font-size: 1.6em !important;
+  line-height: 1.9 !important;
+  font-weight: 700 !important;
+}
+
+/* H3 - Light blue gradient */
+.cm-line:has(.cm-md-heading3) {
+  background: linear-gradient(135deg, #3182ce, #4299e1) !important;
+  border-radius: 4px !important;
+  font-size: 1.3em !important;
+  line-height: 1.9 !important;
+  font-weight: 700 !important;
+}
+
+/* H4 - Gray background with blue accent (background only, no border/padding) */
+.cm-line:has(.cm-md-heading4) {
+  background: #30363d !important;
+  box-shadow: inset 3px 0 0 0 #58a6ff !important;
+  border-radius: 2px !important;
+  font-size: 1.15em !important;
+  line-height: 1.85 !important;
+  font-weight: 600 !important;
+}
+
+/* H5/H6 - subtle inset bottom shadow instead of border (no layout shift) */
+.cm-line:has(.cm-md-heading5),
+.cm-line:has(.cm-md-heading6) {
+  box-shadow: inset 0 -1px 0 0 #30363d !important;
+}
+
+/* Light mode overrides */
+@media (prefers-color-scheme: light) {
+  .cm-line:has(.cm-md-heading4) *,
+  .cm-line:has(.cm-md-heading4) {
+    color: #24292f !important;
+  }
+  .cm-line:has(.cm-md-heading4) {
+    background: #f0f4f8 !important;
+    box-shadow: inset 3px 0 0 0 #0969da !important;
+  }
+  .cm-line:has(.cm-md-heading5),
+  .cm-line:has(.cm-md-heading6) {
+    box-shadow: inset 0 -1px 0 0 #d0d7de !important;
+  }
+}
+
+/* Selection highlight in headings - high contrast against blue gradients */
+.cm-line:has(.cm-md-heading1) .cm-selectionBackground,
+.cm-line:has(.cm-md-heading2) .cm-selectionBackground,
+.cm-line:has(.cm-md-heading3) .cm-selectionBackground {
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
+.cm-line:has(.cm-md-heading4) .cm-selectionBackground {
+  background: rgba(88, 166, 255, 0.3) !important;
+}
+
+/* Also handle native ::selection for preview-like contexts */
+.cm-line:has(.cm-md-heading1) ::selection,
+.cm-line:has(.cm-md-heading2) ::selection,
+.cm-line:has(.cm-md-heading3) ::selection {
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Font matching - bump base size so editor body roughly matches preview body */
+.cm-content {
+  font-family: Arial, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 16px !important;
+  line-height: 1.85 !important;
+}
+
+.cm-content .cm-md-inlineCode,
+.cm-content .cm-md-codeBlock {
+  font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace !important;
+}
+
+/* Table rows: cm-md-table can appear EITHER on the .cm-line itself OR as a child
+   span. Cover both with attribute substring selectors. Override the color so the
+   header row (which carries the .cm-md-heading tag → white) becomes readable. */
+
+.cm-line[class*="cm-md-table"],
+.cm-line[class*="cm-md-table"] *,
+.cm-line:has([class*="cm-md-table"]),
+.cm-line:has([class*="cm-md-table"]) * {
+  color: #24292f !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cm-line[class*="cm-md-table"],
+  .cm-line[class*="cm-md-table"] *,
+  .cm-line:has([class*="cm-md-table"]),
+  .cm-line:has([class*="cm-md-table"]) * {
+    color: #e6edf3 !important;
+  }
+}

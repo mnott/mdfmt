@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# md2pdf — Convert a Markdown file to a styled PDF using the bundled MarkEdit theme.
+#
+# Usage:
+#   md2pdf <input.md> [output.pdf]
+#   md2pdf <input.md> --open
+#
+# If no output is given, writes alongside the input with .pdf extension.
+# --open opens the resulting PDF in Preview (macOS).
+#
+# Requires: bun (or node) — uses `bunx md-to-pdf` under the hood.
+
+set -euo pipefail
+
+# Resolve script directory (handles symlinks)
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+    DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+BIN_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+ROOT_DIR="$(dirname "$BIN_DIR")"
+
+CSS="$ROOT_DIR/styles/markedit-pdf.css"
+
+if [ ! -f "$CSS" ]; then
+    echo "md2pdf: missing stylesheet at $CSS" >&2
+    exit 1
+fi
+
+OPEN_AFTER=0
+INPUT=""
+OUTPUT=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --open) OPEN_AFTER=1 ;;
+        -h|--help)
+            sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+            exit 0 ;;
+        *)
+            if [ -z "$INPUT" ]; then INPUT="$arg"
+            elif [ -z "$OUTPUT" ]; then OUTPUT="$arg"
+            fi ;;
+    esac
+done
+
+if [ -z "$INPUT" ]; then
+    echo "Usage: md2pdf <input.md> [output.pdf] [--open]" >&2
+    exit 1
+fi
+
+if [ ! -f "$INPUT" ]; then
+    echo "md2pdf: file not found: $INPUT" >&2
+    exit 1
+fi
+
+if [ -z "$OUTPUT" ]; then
+    OUTPUT="${INPUT%.*}.pdf"
+fi
+
+if command -v bunx >/dev/null 2>&1; then
+    RUNNER="bunx"
+elif command -v npx >/dev/null 2>&1; then
+    RUNNER="npx --yes"
+else
+    echo "md2pdf: need bun or node installed" >&2
+    exit 1
+fi
+
+# md-to-pdf writes output next to input; symlink into a tempdir so we control where
+TMPDIR_RUN="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR_RUN"' EXIT
+
+ABS_INPUT="$(cd "$(dirname "$INPUT")" && pwd)/$(basename "$INPUT")"
+ABS_OUTPUT="$(cd "$(dirname "$OUTPUT")" && pwd)/$(basename "$OUTPUT")"
+
+ln -s "$ABS_INPUT" "$TMPDIR_RUN/$(basename "$INPUT")"
+
+# Build a config.json with the absolute CSS path so md-to-pdf finds it
+cat > "$TMPDIR_RUN/config.json" <<JSON
+{
+    "stylesheet": ["$CSS"],
+    "body_class": "markdown-body",
+    "marked_options": { "headerIds": false },
+    "pdf_options": {
+        "format": "A4",
+        "margin": { "top": "20mm", "right": "18mm", "bottom": "20mm", "left": "18mm" },
+        "printBackground": true
+    }
+}
+JSON
+
+(
+    cd "$TMPDIR_RUN"
+    $RUNNER md-to-pdf "$(basename "$INPUT")" --config-file "$TMPDIR_RUN/config.json" 2>&1
+) | tail -3
+
+GENERATED="$TMPDIR_RUN/$(basename "${INPUT%.*}").pdf"
+if [ ! -f "$GENERATED" ]; then
+    echo "md2pdf: generation failed" >&2
+    exit 1
+fi
+mv "$GENERATED" "$ABS_OUTPUT"
+echo "md2pdf: wrote $ABS_OUTPUT"
+
+if [ "$OPEN_AFTER" = "1" ]; then
+    open "$ABS_OUTPUT"
+fi
