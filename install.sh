@@ -14,7 +14,6 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN_DIR="$REPO_DIR/bin"
 SERVICES_SRC="$REPO_DIR/services"
 MARKEDIT_CSS_SRC="$REPO_DIR/markedit/editor.css"
-MARKEDIT_EXT_SRC="$REPO_DIR/markedit/scripts/mdfmt-extension.js"
 
 USER_BIN="/usr/local/bin"
 [ -w "$USER_BIN" ] || USER_BIN="$HOME/.local/bin"
@@ -24,7 +23,6 @@ USER_SERVICES="$HOME/Library/Services"
 mkdir -p "$USER_SERVICES"
 
 MARKEDIT_DOCS="$HOME/Library/Containers/app.cyan.markedit/Data/Documents"
-MARKEDIT_SCRIPTS="$MARKEDIT_DOCS/scripts"
 
 YES=0
 UNINSTALL=0
@@ -51,7 +49,6 @@ if [ "$UNINSTALL" = "1" ]; then
     rm -rf "$USER_SERVICES/Format Markdown.workflow" \
            "$USER_SERVICES/Convert to Styled PDF.workflow"
     /System/Library/CoreServices/pbs -flush 2>/dev/null || true
-    rm -f "$MARKEDIT_SCRIPTS/mdfmt-extension.js" 2>/dev/null || true
     defaults delete app.cyan.markedit NSUserKeyEquivalents 2>/dev/null || true
     echo "Done. (MarkEdit editor.css was NOT removed; delete manually if desired.)"
     exit 0
@@ -70,7 +67,6 @@ ln -sf "$BIN_DIR/md2pdf" "$USER_BIN/md2pdf"
 echo "==> Installing macOS Quick Actions to $USER_SERVICES"
 cp -R "$SERVICES_SRC/Format Markdown.workflow" "$USER_SERVICES/"
 cp -R "$SERVICES_SRC/Convert to Styled PDF.workflow" "$USER_SERVICES/"
-cp -R "$SERVICES_SRC/Format Markdown Text.workflow" "$USER_SERVICES/"
 /System/Library/CoreServices/pbs -flush 2>/dev/null || true
 
 if [ -d "$MARKEDIT_DOCS" ]; then
@@ -82,12 +78,6 @@ if [ -d "$MARKEDIT_DOCS" ]; then
         cp "$MARKEDIT_CSS_SRC" "$MARKEDIT_DOCS/editor.css"
         echo "    Installed editor.css"
     fi
-    if ask "==> Install MarkEdit extension (adds ⌥⌘F → Format Markdown menu item)?"; then
-        mkdir -p "$MARKEDIT_SCRIPTS"
-        cp "$MARKEDIT_EXT_SRC" "$MARKEDIT_SCRIPTS/mdfmt-extension.js"
-        echo "    Installed scripts/mdfmt-extension.js"
-        echo "    Restart MarkEdit for the extension to load."
-    fi
 fi
 
 echo
@@ -95,4 +85,3 @@ echo "DONE."
 echo
 echo "CLI:        mdfmt foo.md           md2pdf foo.md --open"
 echo "Finder:     right-click .md → Quick Actions → Format Markdown / Convert to Styled PDF"
-echo "MarkEdit:   ⌥⌘F → Format Markdown (after restart, if extension installed)"
