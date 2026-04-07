@@ -1,56 +1,43 @@
-# mdfmt — Markdown formatting & styled PDF for macOS
+# mdfmt — Styled PDF export for Markdown notes on macOS
 
-A focused, opinionated styling kit for Markdown notes on macOS, built around
-[MarkEdit](https://github.com/MarkEdit-app/MarkEdit). Two CLI tools, two
-Finder Quick Actions, a custom MarkEdit editor stylesheet, and a matching PDF
-theme — bundled together so the way your notes look in the editor is the way
-they look when exported.
+A tiny, focused tool: render Markdown to a beautiful PDF using a custom blue
+gradient theme that matches the look of [MarkEdit](https://github.com/MarkEdit-app/MarkEdit)
+when paired with the bundled `editor.css`.
 
-## What's in the box
+> **The name is misleading and historical** — earlier versions of this repo
+> tried to do markdown formatting too, but that's already covered properly
+> by [MarkEdit-mte](https://github.com/MarkEdit-app/MarkEdit-mte) (live table
+> editor with cell-aware formatting). The repo has since narrowed to PDF
+> export and the matching editor stylesheet.
 
-| Piece | What it does |
+## What you get
+
+| Piece | Purpose |
 | --- | --- |
-| `bin/mdfmt` | Wraps Prettier with markdown defaults (`--prose-wrap preserve`). Idempotent. |
-| `bin/md2pdf` | Wraps [`md-to-pdf`](https://github.com/simonhaenisch/md-to-pdf) with the bundled MarkEdit-style theme. |
-| `services/Format Markdown.workflow` | Finder Quick Action — right-click .md file(s), runs `mdfmt`. Great for batch-formatting a folder of notes. |
-| `services/Convert to Styled PDF.workflow` | Finder Quick Action — right-click .md, runs `md2pdf` and opens the result in Preview. |
-| `markedit/editor.css` | Optional MarkEdit edit-view stylesheet — blue gradient heading bars (H1–H4), with **CodeMirror-safe geometry** so cursor navigation stays accurate. |
-| `styles/markedit-pdf.css` | Stylesheet `md2pdf` uses for PDF rendering — same blue gradient look as the editor. |
+| `bin/md2pdf` | CLI: render any `.md` file to a styled PDF using the bundled theme. Wraps [`md-to-pdf`](https://github.com/simonhaenisch/md-to-pdf). |
+| `services/Convert to Styled PDF.workflow` | macOS Finder Quick Action: right-click a `.md` file → styled PDF, opens in Preview. |
+| `styles/markedit-pdf.css` | The PDF stylesheet — H1–H4 blue gradient banners, GitHub-style code blocks and tables, page-break-aware. Edit once, all your PDFs change. |
+| `markedit/editor.css` | Optional: matching MarkEdit edit-view stylesheet so the editor and the PDF look the same. Includes documented workarounds for two CodeMirror 6 pitfalls (see below). |
 
-## What it isn't (and why)
+## Recommended companions
 
-This repo is **deliberately narrow**. We tried building everything in-editor
-and ran into walls; here's the honest map of what does and doesn't work in
-MarkEdit's current API surface, so the next person doesn't waste a day on it:
+If you use MarkEdit, install these from the official MarkEdit ecosystem for
+the in-editor editing experience this repo deliberately doesn't reinvent:
 
-- **In-editor markdown formatting**: not in this repo. Install
-  **[MarkEdit-prettier](https://github.com/MarkEdit-app/MarkEdit-prettier)**
-  (official, ships as a MarkEdit extension). Bind a shortcut from the menu and
-  you're set. We submitted a PR to that repo to add cursor-position
-  preservation.
+- [**MarkEdit-mte**](https://github.com/MarkEdit-app/MarkEdit-mte) — live table
+  editor with Tab/Enter cell navigation and Format / Format All commands.
+  Built on `@tgrosinger/md-advanced-tables` (the same library Obsidian uses).
+- [**MarkEdit-prettier**](https://github.com/MarkEdit-app/MarkEdit-prettier) —
+  whole-document Prettier formatting from the menu, if you want it.
 
-- **In-editor live table editing**: not in this repo. Install
-  **[MarkEdit-mte](https://github.com/MarkEdit-app/MarkEdit-mte)** (official,
-  Tab/Enter cell navigation, Format / Format All commands). Solves the
-  "tables in source view are unreadable" problem properly.
-
-- **In-editor PDF generation**: **not viable** with MarkEdit's current
-  extension API. We tried two paths:
-  1. `window.print()` from a hidden iframe inside MarkEdit's WKWebView —
-     silently does nothing (no print bridge exposed).
-  2. `MarkEdit.runService()` to invoke a macOS Service that takes a file path
-     — silently fails. The pasteboard type runService writes (text) doesn't
-     match what file-based Quick Actions expect (`NSSendFileTypes`), and a
-     custom text-input service workflow registers but isn't invoked when
-     called via runService (root cause invisible from JavaScript).
-  Use the Finder Quick Action or `md2pdf` CLI instead. Both are friction-free
-  and produce identical output.
+Drop their `dist/*.js` files into
+`~/Library/Containers/app.cyan.markedit/Data/Documents/scripts/` and restart
+MarkEdit. They live happily alongside this repo's `editor.css`.
 
 ## Requirements
 
 - **macOS** (Quick Actions, MarkEdit container paths)
-- **bun** (recommended) or **node** for the CLI tools
-- **MarkEdit** (optional — only if you want the editor.css)
+- **bun** (recommended) or **node** for `md2pdf`
 
 ```sh
 brew install oven-sh/bun/bun     # recommended
@@ -68,8 +55,8 @@ cd mdfmt
 
 The installer:
 
-1. Symlinks `bin/mdfmt` and `bin/md2pdf` into `/usr/local/bin`
-2. Copies the two Quick Actions to `~/Library/Services` and flushes the Services cache
+1. Symlinks `bin/md2pdf` into `/usr/local/bin`
+2. Copies the Quick Action to `~/Library/Services` and flushes the Services cache
 3. Optionally installs `markedit/editor.css` (with a timestamped backup of any existing one)
 
 `./install.sh --yes` accepts all defaults. `./install.sh --uninstall` removes everything.
@@ -79,10 +66,6 @@ The installer:
 ### CLI
 
 ```sh
-mdfmt notes.md                  # format in place (idempotent)
-mdfmt notes.md other.md         # multiple files
-mdfmt --check notes.md          # dry-run, just report
-
 md2pdf notes.md                 # writes notes.pdf next to source
 md2pdf notes.md out.pdf         # custom output path
 md2pdf notes.md --open          # convert and open in Preview
@@ -90,40 +73,26 @@ md2pdf notes.md --open          # convert and open in Preview
 
 ### Finder
 
-Right-click any `.md` file → **Quick Actions** → choose:
+Right-click any `.md` file → **Quick Actions → Convert to Styled PDF**.
 
-- **Format Markdown** → reformats in place via `mdfmt`. Select multiple files first to batch-format.
-- **Convert to Styled PDF** → renders via `md2pdf` and opens the PDF in Preview.
-
-If a Quick Action doesn't appear in the menu, enable it once in
+If the Quick Action doesn't appear, enable it once in
 **System Settings → Privacy & Security → Extensions → Finder Extensions**.
-
-### Recommended companions for MarkEdit users
-
-These two cover everything we initially wanted to build but couldn't ship as
-extensions ourselves:
-
-- [**MarkEdit-mte**](https://github.com/MarkEdit-app/MarkEdit-mte) — live
-  table editor (Tab/Enter cell navigation, Format / Format All).
-- [**MarkEdit-prettier**](https://github.com/MarkEdit-app/MarkEdit-prettier) —
-  whole-document Prettier formatting from the menu.
-
-Install both into `~/Library/Containers/app.cyan.markedit/Data/Documents/scripts/`
-and restart MarkEdit. They live happily alongside the bundled `editor.css`.
 
 ---
 
 ## The MarkEdit `editor.css`
 
-`markedit/editor.css` styles MarkEdit's edit view with blue gradient heading
-bars (H1 → H4), inspired by Obsidian's MN theme. Installed by `./install.sh`
-to:
+`markedit/editor.css` styles MarkEdit's edit view with the same blue gradient
+heading bars (H1 → H4) used in the PDF theme, so what you see while writing
+matches what you get when you export.
+
+Installed by `./install.sh` to:
 
 ```
 ~/Library/Containers/app.cyan.markedit/Data/Documents/editor.css
 ```
 
-### Two pitfalls baked into the CSS (worth knowing if you customise it)
+### Two pitfalls baked into the CSS — worth knowing if you customise it
 
 **1. No `padding`/`margin`/`border` on `.cm-line`.** CodeMirror 6 caches line
 geometry on first render. Raw CSS that grows the line box (padding, margin,
@@ -169,14 +138,12 @@ mdfmt/
 ├── install.sh
 ├── .gitignore
 ├── bin/
-│   ├── mdfmt              # prettier wrapper
 │   └── md2pdf             # md-to-pdf wrapper, resolves CSS via $BASH_SOURCE
 ├── styles/
 │   └── markedit-pdf.css   # PDF stylesheet (used by md2pdf)
 ├── markedit/
 │   └── editor.css         # MarkEdit edit-view stylesheet (optional install)
 └── services/
-    ├── Format Markdown.workflow/         # Finder right-click → mdfmt
     └── Convert to Styled PDF.workflow/   # Finder right-click → md2pdf
 ```
 
@@ -186,8 +153,14 @@ mdfmt/
 ./install.sh --uninstall
 ```
 
-Removes the CLI symlinks and both Quick Actions. The MarkEdit `editor.css` is
+Removes the CLI symlink and the Quick Action. The MarkEdit `editor.css` is
 **not** removed automatically — delete it manually if you want.
+
+## Why the name `mdfmt`?
+
+Historical leftover from earlier iterations that tried to wrap Prettier as
+well. The repo could honestly be called `markedit-pdf` now — but renaming
+public repos breaks links, so it stays.
 
 ## License
 

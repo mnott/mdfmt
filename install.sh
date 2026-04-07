@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# install.sh — Install mdfmt + md2pdf CLI commands, macOS Quick Action services,
-# and (optionally) the MarkEdit editor.css customization and the MarkEdit JS
-# extension that adds a real ⌥⌘F "Format Markdown" menu item inside MarkEdit.
+# install.sh — Install md2pdf CLI, the "Convert to Styled PDF" Finder Quick
+# Action, and (optionally) the matching MarkEdit editor.css customisation.
 #
 # Usage:
 #   ./install.sh                # interactive
@@ -31,7 +30,7 @@ for arg in "$@"; do
         --yes|-y) YES=1 ;;
         --uninstall) UNINSTALL=1 ;;
         -h|--help)
-            sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
             exit 0 ;;
     esac
 done
@@ -45,11 +44,9 @@ ask() {
 
 if [ "$UNINSTALL" = "1" ]; then
     echo "Uninstalling..."
-    rm -f "$USER_BIN/mdfmt" "$USER_BIN/md2pdf"
-    rm -rf "$USER_SERVICES/Format Markdown.workflow" \
-           "$USER_SERVICES/Convert to Styled PDF.workflow"
+    rm -f "$USER_BIN/md2pdf"
+    rm -rf "$USER_SERVICES/Convert to Styled PDF.workflow"
     /System/Library/CoreServices/pbs -flush 2>/dev/null || true
-    defaults delete app.cyan.markedit NSUserKeyEquivalents 2>/dev/null || true
     echo "Done. (MarkEdit editor.css was NOT removed; delete manually if desired.)"
     exit 0
 fi
@@ -57,20 +54,19 @@ fi
 if ! command -v bunx >/dev/null 2>&1 && ! command -v npx >/dev/null 2>&1; then
     echo "ERROR: need bun or node installed first." >&2
     echo "  brew install oven-sh/bun/bun     # recommended" >&2
+    echo "  brew install node" >&2
     exit 1
 fi
 
-echo "==> Installing CLI commands to $USER_BIN"
-ln -sf "$BIN_DIR/mdfmt" "$USER_BIN/mdfmt"
+echo "==> Installing md2pdf to $USER_BIN"
 ln -sf "$BIN_DIR/md2pdf" "$USER_BIN/md2pdf"
 
-echo "==> Installing macOS Quick Actions to $USER_SERVICES"
-cp -R "$SERVICES_SRC/Format Markdown.workflow" "$USER_SERVICES/"
+echo "==> Installing 'Convert to Styled PDF' Quick Action to $USER_SERVICES"
 cp -R "$SERVICES_SRC/Convert to Styled PDF.workflow" "$USER_SERVICES/"
 /System/Library/CoreServices/pbs -flush 2>/dev/null || true
 
 if [ -d "$MARKEDIT_DOCS" ]; then
-    if ask "==> Install MarkEdit editor.css customization?"; then
+    if ask "==> Install matching MarkEdit editor.css customisation?"; then
         if [ -f "$MARKEDIT_DOCS/editor.css" ] && ! cmp -s "$MARKEDIT_CSS_SRC" "$MARKEDIT_DOCS/editor.css"; then
             cp "$MARKEDIT_DOCS/editor.css" "$MARKEDIT_DOCS/editor.css.backup-$(date +%Y%m%d-%H%M%S)"
             echo "    Backed up existing editor.css"
@@ -83,5 +79,5 @@ fi
 echo
 echo "DONE."
 echo
-echo "CLI:        mdfmt foo.md           md2pdf foo.md --open"
-echo "Finder:     right-click .md → Quick Actions → Format Markdown / Convert to Styled PDF"
+echo "CLI:        md2pdf foo.md --open"
+echo "Finder:     right-click .md → Quick Actions → Convert to Styled PDF"
