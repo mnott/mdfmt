@@ -45,7 +45,9 @@ ask() {
 if [ "$UNINSTALL" = "1" ]; then
     echo "Uninstalling..."
     rm -f "$USER_BIN/md2pdf"
+    rm -f "$USER_BIN/md2html"
     rm -rf "$USER_SERVICES/Convert to Styled PDF.workflow"
+    rm -rf "$USER_SERVICES/Convert to Styled HTML.workflow"
     /System/Library/CoreServices/pbs -flush 2>/dev/null || true
     echo "Done. (MarkEdit editor.css was NOT removed; delete manually if desired.)"
     exit 0
@@ -61,8 +63,17 @@ fi
 echo "==> Installing md2pdf to $USER_BIN"
 ln -sf "$BIN_DIR/md2pdf" "$USER_BIN/md2pdf"
 
+echo "==> Installing md2html to $USER_BIN"
+ln -sf "$BIN_DIR/md2html" "$USER_BIN/md2html"
+
 echo "==> Installing 'Convert to Styled PDF' Quick Action to $USER_SERVICES"
+rm -rf "$USER_SERVICES/Convert to Styled PDF.workflow"
 cp -R "$SERVICES_SRC/Convert to Styled PDF.workflow" "$USER_SERVICES/"
+
+echo "==> Installing 'Convert to Styled HTML' Quick Action to $USER_SERVICES"
+rm -rf "$USER_SERVICES/Convert to Styled HTML.workflow"
+cp -R "$SERVICES_SRC/Convert to Styled HTML.workflow" "$USER_SERVICES/"
+
 /System/Library/CoreServices/pbs -flush 2>/dev/null || true
 
 if [ -d "$MARKEDIT_DOCS" ]; then
@@ -80,4 +91,6 @@ echo
 echo "DONE."
 echo
 echo "CLI:        md2pdf foo.md --open"
+echo "            md2html foo.md --open"
 echo "Finder:     right-click .md → Quick Actions → Convert to Styled PDF"
+echo "            right-click .md → Quick Actions → Convert to Styled HTML"

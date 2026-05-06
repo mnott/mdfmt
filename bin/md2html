@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# md2html — Convert a Markdown file to a styled, self-contained HTML file
+# using the bundled MarkEdit theme (same CSS as md2pdf).
+#
+# Usage:
+#   md2html <input.md> [output.html]
+#   md2html <input.md> --open
+#
+# If no output is given, writes alongside the input with .html extension.
+# --open opens the resulting HTML in the default browser (macOS).
+#
+# Requires: bun (or node) — uses `bunx md-to-pdf --as-html` under the hood.
+
+set -euo pipefail
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+    DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+BIN_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+ROOT_DIR="$(dirname "$BIN_DIR")"
+
+CSS="$ROOT_DIR/styles/markedit-pdf.css"
+
+if [ ! -f "$CSS" ]; then
+    echo "md2html: missing stylesheet at $CSS" >&2
+    exit 1
+fi
+
+OPEN_AFTER=0
+INPUT=""
+OUTPUT=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --open) OPEN_AFTER=1 ;;
+        -h|--help)
+            sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+            exit 0 ;;
+        *)
+            if [ -z "$INPUT" ]; then INPUT="$arg"
+            elif [ -z "$OUTPUT" ]; then OUTPUT="$arg"
+            fi ;;
+    esac
+done
+
+if [ -z "$INPUT" ]; then
+    echo "Usage: md2html <input.md> [output.html] [--open]" >&2
+    exit 1
+fi
+
+if [ ! -f "$INPUT" ]; then
+    echo "md2html: file not found: $INPUT" >&2
+    exit 1
+fi
+
+if [ -z "$OUTPUT" ]; then
+    OUTPUT="${INPUT%.*}.html"
+fi
+
+if command -v bunx >/dev/null 2>&1; then
+    RUNNER="bunx"
+elif command -v npx >/dev/null 2>&1; then
+    RUNNER="npx --yes"
+else
+    echo "md2html: need bun or node installed" >&2
+    exit 1
+fi
+
+TMPDIR_RUN="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR_RUN"' EXIT
+
+ABS_INPUT="$(cd "$(dirname "$INPUT")" && pwd)/$(basename "$INPUT")"
+ABS_OUTPUT="$(cd "$(dirname "$OUTPUT")" && pwd)/$(basename "$OUTPUT")"
+
+ln -s "$ABS_INPUT" "$TMPDIR_RUN/$(basename "$INPUT")"
+
+# Same CSS as md2pdf — embedded inline so the .html is self-contained.
+cat > "$TMPDIR_RUN/config.json" <<JSON
+{
+    "stylesheet": ["$CSS"],
+    "body_class": "markdown-body",
+    "marked_options": { "headerIds": false }
+}
+JSON
+
+(
+    cd "$TMPDIR_RUN"
+    $RUNNER md-to-pdf --as-html "$(basename "$INPUT")" --config-file "$TMPDIR_RUN/config.json" 2>&1
+) | tail -3
+
+GENERATED="$TMPDIR_RUN/$(basename "${INPUT%.*}").html"
+if [ ! -f "$GENERATED" ]; then
+    echo "md2html: generation failed" >&2
+    exit 1
+fi
+mv "$GENERATED" "$ABS_OUTPUT"
+echo "md2html: wrote $ABS_OUTPUT"
+
+if [ "$OPEN_AFTER" = "1" ]; then
+    open "$ABS_OUTPUT"
+fi

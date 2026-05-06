@@ -15,7 +15,9 @@ when paired with the bundled `editor.css`.
 | Piece | Purpose |
 | --- | --- |
 | `bin/md2pdf` | CLI: render any `.md` file to a styled PDF using the bundled theme. Wraps [`md-to-pdf`](https://github.com/simonhaenisch/md-to-pdf). |
+| `bin/md2html` | CLI: render any `.md` file to a self-contained styled HTML using the same theme as md2pdf. |
 | `services/Convert to Styled PDF.workflow` | macOS Finder Quick Action: right-click a `.md` file → styled PDF, opens in Preview. |
+| `services/Convert to Styled HTML.workflow` | macOS Finder Quick Action: right-click a `.md` file → styled HTML, opens in default browser. |
 | `styles/markedit-pdf.css` | The PDF stylesheet — H1–H4 blue gradient banners, GitHub-style code blocks and tables, page-break-aware. Edit once, all your PDFs change. |
 | `markedit/editor.css` | Optional: matching MarkEdit edit-view stylesheet so the editor and the PDF look the same. Includes documented workarounds for two CodeMirror 6 pitfalls (see below). |
 
@@ -69,11 +71,14 @@ The installer:
 md2pdf notes.md                 # writes notes.pdf next to source
 md2pdf notes.md out.pdf         # custom output path
 md2pdf notes.md --open          # convert and open in Preview
+
+md2html notes.md                # writes notes.html (self-contained, same theme)
+md2html notes.md --open         # convert and open in default browser
 ```
 
 ### Finder
 
-Right-click any `.md` file → **Quick Actions → Convert to Styled PDF**.
+Right-click any `.md` file → **Quick Actions → Convert to Styled PDF** (or **Convert to Styled HTML**).
 
 If the Quick Action doesn't appear, enable it once in
 **System Settings → Privacy & Security → Extensions → Finder Extensions**.
@@ -138,13 +143,15 @@ mdfmt/
 ├── install.sh
 ├── .gitignore
 ├── bin/
-│   └── md2pdf             # md-to-pdf wrapper, resolves CSS via $BASH_SOURCE
+│   ├── md2pdf             # md-to-pdf wrapper, resolves CSS via $BASH_SOURCE
+│   └── md2html            # same wrapper, --as-html output (shared CSS)
 ├── styles/
-│   └── markedit-pdf.css   # PDF stylesheet (used by md2pdf)
+│   └── markedit-pdf.css   # shared stylesheet (used by md2pdf and md2html)
 ├── markedit/
 │   └── editor.css         # MarkEdit edit-view stylesheet (optional install)
 └── services/
-    └── Convert to Styled PDF.workflow/   # Finder right-click → md2pdf
+    ├── Convert to Styled PDF.workflow/    # Finder right-click → md2pdf
+    └── Convert to Styled HTML.workflow/   # Finder right-click → md2html
 ```
 
 ## Uninstall
