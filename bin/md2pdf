@@ -76,7 +76,24 @@ trap 'rm -rf "$TMPDIR_RUN"' EXIT
 ABS_INPUT="$(cd "$(dirname "$INPUT")" && pwd)/$(basename "$INPUT")"
 ABS_OUTPUT="$(cd "$(dirname "$OUTPUT")" && pwd)/$(basename "$OUTPUT")"
 
-ln -s "$ABS_INPUT" "$TMPDIR_RUN/$(basename "$INPUT")"
+WORKMD="$TMPDIR_RUN/$(basename "$INPUT")"
+
+# Pre-render Mermaid diagrams to inline SVG — marked/md-to-pdf don't run Mermaid,
+# so ```mermaid blocks would otherwise print as raw code. Fail-open: on any issue
+# fall back to the raw file so a PDF is still produced.
+if grep -q '```mermaid' "$ABS_INPUT"; then
+    if command -v bun >/dev/null 2>&1; then MJS_RUNNER="bun"
+    elif command -v node >/dev/null 2>&1; then MJS_RUNNER="node"
+    else MJS_RUNNER=""; fi
+    if [ -n "$MJS_RUNNER" ] && "$MJS_RUNNER" "$ROOT_DIR/bin/lib/mermaid-inline.mjs" "$ABS_INPUT" "$WORKMD"; then
+        :
+    else
+        echo "md2pdf: mermaid pre-render skipped" >&2
+        ln -sf "$ABS_INPUT" "$WORKMD"
+    fi
+else
+    ln -s "$ABS_INPUT" "$WORKMD"
+fi
 
 # Build a config.json with the absolute CSS path so md-to-pdf finds it
 cat > "$TMPDIR_RUN/config.json" <<JSON

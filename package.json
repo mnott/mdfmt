@@ -1,0 +1,8 @@
+{
+  "name": "mdfmt",
+  "private": true,
+  "description": "Markdown → styled PDF/HTML exporter (md2pdf, md2html). Deps here are only for the Mermaid pre-render pass.",
+  "dependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}

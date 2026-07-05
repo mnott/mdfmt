@@ -2,3 +2,10 @@
 node_modules/
 *.log
 *.bak
+
+# Vendored Mermaid runtime (auto-downloaded on first mermaid render)
+vendor/
+
+# PAI session artifacts (not part of the tool)
+Notes/
+memory/

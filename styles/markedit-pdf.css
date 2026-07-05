@@ -125,6 +125,18 @@ pre code {
     color: var(--fg);
 }
 
+/* === Mermaid diagrams (pre-rendered to inline SVG by bin/lib/mermaid-inline.mjs) === */
+.mermaid-figure {
+    text-align: center;
+    margin: 1.2em 0;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+.mermaid-figure svg {
+    max-width: 100%;
+    height: auto;
+}
+
 blockquote {
     margin: 1em 0;
     padding: 0.4em 1em;

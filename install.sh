@@ -60,6 +60,11 @@ if ! command -v bunx >/dev/null 2>&1 && ! command -v npx >/dev/null 2>&1; then
     exit 1
 fi
 
+if command -v bun >/dev/null 2>&1; then
+    echo "==> Installing Mermaid pre-render deps (puppeteer-core) via bun"
+    (cd "$REPO_DIR" && bun install >/dev/null 2>&1) || echo "    (bun install failed — Mermaid diagrams will render as code)"
+fi
+
 echo "==> Installing md2pdf to $USER_BIN"
 ln -sf "$BIN_DIR/md2pdf" "$USER_BIN/md2pdf"
 
